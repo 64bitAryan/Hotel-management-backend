@@ -9,17 +9,27 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+type Dropper interface {
+	Drop(context.Context) error
+}
+
 type UserStore interface {
+	Dropper
+
 	GetUserById(context.Context, string) (*types.User, error)
 	GetUsers(context.Context) ([]*types.User, error)
 	InsertUser(context.Context, *types.User) (*types.User, error)
 	DeleteUser(context.Context, string) error
-	UpdateUser(context.Context, bson.M, bson.M) error
+	UpdateUser(context.Context, bson.M, types.UpdateUserParams) error
 }
 
 type MongoUserStore struct {
 	client *mongo.Client
 	coll   *mongo.Collection
+}
+
+func (s *MongoUserStore) Drop(ctx context.Context) error {
+	return s.coll.Drop(ctx)
 }
 
 func NewMongoUserStore(c *mongo.Client) *MongoUserStore {
@@ -77,8 +87,12 @@ func (s *MongoUserStore) DeleteUser(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *MongoUserStore) UpdateUser(ctx context.Context, filter bson.M, values bson.M) error {
-	update := bson.M{}
+func (s *MongoUserStore) UpdateUser(ctx context.Context, filter bson.M, params types.UpdateUserParams) error {
+	update := bson.D{
+		{
+			"$set", params.ToBISON(),
+		},
+	}
 	_, err := s.coll.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
