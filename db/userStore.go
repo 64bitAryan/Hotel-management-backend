@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/64bitAryan/hotel-management/types"
 	"go.mongodb.org/mongo-driver/bson"
@@ -29,11 +30,12 @@ type MongoUserStore struct {
 }
 
 func (s *MongoUserStore) Drop(ctx context.Context) error {
+	fmt.Println("--- dropping user collection ")
 	return s.coll.Drop(ctx)
 }
 
-func NewMongoUserStore(c *mongo.Client) *MongoUserStore {
-	coll := *c.Database(DBNAME).Collection(UserColl)
+func NewMongoUserStore(c *mongo.Client, dbname string) *MongoUserStore {
+	coll := *c.Database(dbname).Collection(UserColl)
 	return &MongoUserStore{
 		client: c,
 		coll:   &coll,
