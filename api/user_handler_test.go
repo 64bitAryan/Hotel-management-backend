@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"testing"
@@ -35,7 +34,7 @@ func (tdb *testdb) teardown(t *testing.T) {
 func setup(t *testing.T) *testdb {
 	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI(testdbUri))
 	if err != nil {
-		log.Fatal(err)
+		t.Fatal(err)
 	}
 	return &testdb{
 		UserStore: db.NewMongoUserStore(client, dbname),
@@ -51,7 +50,7 @@ func TestPostUser(t *testing.T) {
 	app.Post("/", userHandler.HandlePostUser)
 
 	params := types.CreateUserParams{
-		Email:     "somefoo@test.com",
+		Email:     "somefootest.com",
 		FirstName: "foo",
 		LastName:  "bar",
 		Password:  "1234567",
@@ -64,6 +63,25 @@ func TestPostUser(t *testing.T) {
 		log.Fatal(err)
 	}
 	req.Header.Add("Content-type", "application/json")
-	res, _ := app.Test(req)
-	fmt.Println(res.Status)
+	res, err := app.Test(req)
+	if err != nil {
+		t.Error(err)
+	}
+	var user types.User
+	json.NewDecoder(res.Body).Decode(&user)
+	if len(user.ID) == 0 {
+		t.Errorf("expected user ID to be set")
+	}
+	if len(user.EncryptedPassword) > 0 {
+		t.Errorf("expecting the encrypted password to not to be included in json response")
+	}
+	if user.FirstName != params.FirstName {
+		t.Errorf("expected username %s but got %s", params.FirstName, user.FirstName)
+	}
+	if user.LastName != params.LastName {
+		t.Errorf("expected lastName %s but got %s", params.LastName, user.LastName)
+	}
+	if user.Email != params.Email {
+		t.Errorf("expected email %s but got %s", params.Email, user.Email)
+	}
 }
