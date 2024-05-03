@@ -10,7 +10,7 @@ seed:
 test:
 	@go test -v ./...
 
-ARG ?= default_value
+ARG ?= "initial commit"
 
 # Use the MAKECMDGOALS variable to get the command line argument
 ifeq ($(MAKECMDGOALS),)
