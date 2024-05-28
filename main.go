@@ -33,6 +33,7 @@ func main() {
 		roomStore   = db.NewMongoRoomStore(client, hotelStore)
 		userStore   = db.NewMongoUserStore(client)
 		userHandler = api.NewUserHandler(userStore)
+		authHandler = api.NewAuthHandler(userStore)
 		store       = db.Store{
 			Room:  roomStore,
 			Hotel: hotelStore,
@@ -45,7 +46,9 @@ func main() {
 	)
 
 	//Auth handlers
-	auth.Post("/auth", userHandler.HandleAuthentication)
+	auth.Post("/auth", authHandler.HandleAuthentication)
+
+	/*  Versioned API routes  */
 
 	// User haldlers
 	apiv1.Put("/user/:id", userHandler.HandlePutUser)
