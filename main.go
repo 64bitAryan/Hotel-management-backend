@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/64bitAryan/hotel-management/api"
+	"github.com/64bitAryan/hotel-management/api/middleware"
 	"github.com/64bitAryan/hotel-management/db"
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -39,8 +40,13 @@ func main() {
 		}
 		hotelHandler = api.NewHotelHandler(&store)
 		app          = fiber.New(config)
-		apiv1        = app.Group("/api/v1")
+		apiv1        = app.Group("/api/v1", middleware.JWTAuthentication)
+		auth         = app.Group("/api")
 	)
+
+	//Auth handlers
+	auth.Post("/auth", userHandler.HandleAuthentication)
+
 	// User haldlers
 	apiv1.Put("/user/:id", userHandler.HandlePutUser)
 	apiv1.Delete("/user/:id", userHandler.HandleDeleteUser)
@@ -49,7 +55,8 @@ func main() {
 	apiv1.Get("/user/:id", userHandler.HandleGetUser)
 
 	// Hotel haldlers
-	apiv1.Get("/hotel", hotelHandler.HandleGetHotel)
+	apiv1.Get("/hotel", hotelHandler.HandleGetHotels)
+	apiv1.Get("/hotel/:id", hotelHandler.HandleGetHotel)
 	apiv1.Get("/hotel/:id/rooms", hotelHandler.HandleGetRooms)
 	app.Listen(*port)
 }

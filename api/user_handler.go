@@ -2,6 +2,7 @@ package api
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/64bitAryan/hotel-management/db"
 	"github.com/64bitAryan/hotel-management/types"
@@ -13,6 +14,11 @@ import (
 
 type UserHandler struct {
 	userStore db.UserStore
+}
+
+type AuthParams struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func NewUserHandler(userStore db.UserStore) *UserHandler {
@@ -89,4 +95,13 @@ func (h *UserHandler) HandleGetUsers(c *fiber.Ctx) error {
 		return err
 	}
 	return c.JSON(users)
+}
+
+func (h *UserHandler) HandleAuthentication(c *fiber.Ctx) error {
+	var authParams AuthParams
+	if err := c.BodyParser(&authParams); err != nil {
+		return err
+	}
+	fmt.Println(authParams)
+	return nil
 }
