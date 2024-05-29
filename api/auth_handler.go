@@ -3,6 +3,8 @@ package api
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
 
 	"github.com/64bitAryan/hotel-management/db"
 	"github.com/64bitAryan/hotel-management/types"
@@ -18,6 +20,11 @@ type AuthHandler struct {
 type AuthParams struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+}
+
+type AuthResponse struct {
+	User  *types.User `json:"user"`
+	Token string      `json:"token"`
 }
 
 func NewAuthHandler(userStore db.UserStore) *AuthHandler {
@@ -42,12 +49,29 @@ func (a *AuthHandler) HandleAuthentication(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Authenticated -> ", user)
-	return nil
+
+	resp := AuthResponse{
+		User:  user,
+		Token: createTokenFromUser(user),
+	}
+
+	return c.JSON(resp)
 }
 
-func makeClaimsFromUser(user *types.User) jwt.MapClaims {
-	claims := jwt.MapClaims{}
-	claims["userID"] = user.ID
-	return nil
+func createTokenFromUser(user *types.User) string {
+	now := time.Now()
+	validTill := now.Add(time.Hour * 4)
+	claims := jwt.MapClaims{
+		"id":        user.ID,
+		"email":     user.Email,
+		"validTill": validTill,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	secreat := os.Getenv("JWT_SECRET")
+	fmt.Println("Secreat: ", secreat)
+	tokenStr, err := token.SignedString([]byte(secreat))
+	if err != nil {
+		fmt.Println("failed to signed tokes with secreat", err)
+	}
+	return tokenStr
 }
