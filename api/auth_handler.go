@@ -3,6 +3,7 @@ package api
 import (
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -27,6 +28,18 @@ type AuthResponse struct {
 	Token string      `json:"token"`
 }
 
+type genericResp struct {
+	Type string `json:"type"`
+	Msg  string `json:"msg"`
+}
+
+func invalidCredentials(c *fiber.Ctx) error {
+	return c.Status(http.StatusBadRequest).JSON(genericResp{
+		Type: "error",
+		Msg:  "Invalid credentials",
+	})
+}
+
 func NewAuthHandler(userStore db.UserStore) *AuthHandler {
 	return &AuthHandler{
 		userStore: userStore,
@@ -41,20 +54,19 @@ func (a *AuthHandler) HandleAuthentication(c *fiber.Ctx) error {
 	user, err := a.userStore.GetUserByEmail(c.Context(), authParams.Email)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return fmt.Errorf("invalid credentials")
+			return invalidCredentials(c)
 		}
 		return err
 	}
 	err = types.IsValidPassword(user.EncryptedPassword, authParams.Password)
 	if err != nil {
-		return err
+		return invalidCredentials(c)
 	}
 
 	resp := AuthResponse{
 		User:  user,
 		Token: createTokenFromUser(user),
 	}
-
 	return c.JSON(resp)
 }
 
