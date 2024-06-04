@@ -51,7 +51,7 @@ func (c CreateUserParams) Validate() map[string]string {
 		errors["password"] = fmt.Sprintf("password should be atleast %d character", minPasswordLength)
 	}
 	if isEmailValid(c.Email) {
-		errors["email"] = fmt.Sprintf("invalid email")
+		errors["email"] = fmt.Sprintf("email %s is invalid", c.Email)
 	}
 	return errors
 }
@@ -67,6 +67,7 @@ type User struct {
 	LastName          string             `bson:"lastName" json:"lastName"`
 	Email             string             `bson:"email" json:"email"`
 	EncryptedPassword string             `bson:"EncryptedPassword" json:"-"`
+	IsAdmin           bool               `bson:"isAdmin" json:"isAdmin"`
 }
 
 func NewUserFromParams(params CreateUserParams) (*User, error) {
